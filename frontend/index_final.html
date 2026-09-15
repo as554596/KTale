@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>KTale - 小說翻譯器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --border: #e5e7eb;
+            --bg: #ffffff;
+            --bg-secondary: #f9fafb;
+            --text: #111827;
+            --text-secondary: #6b7280;
+            --success: #10b981;
+            --danger: #ef4444;
+            --sidebar-width: 240px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text);
+            background: var(--bg-secondary);
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--bg);
+            border-right: 1px solid var(--border);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            color: var(--text);
+            transition: background 0.2s;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        /* Main */
+        .main {
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+        }
+
+        .menu-btn {
+            width: 32px;
+            height: 32px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background: var(--text);
+            transition: 0.3s;
+        }
+
+        .topbar-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Content */
+        .content {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Button */
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+        }
+
+        .upload-area-text {
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+        }
+
+        .upload-area-hint {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        /* File Type Tabs */
+        .file-type-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .file-type-tab {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg);
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .file-type-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* File List */
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .file-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-item-name {
+            font-size: 14px;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-item-size {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .file-item-remove {
+            padding: 6px;
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+        }
+
+        /* Progress Bar */
+        .progress {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        /* Progress Details */
+        .progress-details {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .progress-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .progress-stat:last-child {
+            border-bottom: none;
+        }
+
+        .progress-stat-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .progress-stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .progress-percentage {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .progress-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* Term List */
+        .term-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .term-item-left {
+            flex: 1;
+        }
+
+        .term-item-right {
+            flex: 1;
+        }
+
+        .term-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .term-text {
+            font-size: 14px;
+        }
+
+        .term-freq {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .term-contexts {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .context-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            margin-top: 4px;
+            line-height: 1.6;
+        }
+
+        .text-gray {
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .toast.show {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Desktop */
+        @media (min-width: 768px) {
+            .sidebar {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: var(--sidebar-width);
+            }
+
+            .menu-btn {
+                display: none;
+            }
+
+            .overlay {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>KTale</h1>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-item active" onclick="navigateTo('files')">文件管理</div>
+            <div class="nav-item" onclick="navigateTo('glossary-extract')">術語提取</div>
+            <div class="nav-item" onclick="navigateTo('glossary-review')">術語校對</div>
+            <div class="nav-item" onclick="navigateTo('translate')">翻譯</div>
+            <div class="nav-item" onclick="navigateTo('quality-check')">漏翻校對</div>
+            <div class="nav-item" onclick="navigateTo('settings')">設置</div>
+        </nav>
+        <div class="sidebar-footer">
+            版本 2.0
+        </div>
+    </aside>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+    <!-- Main -->
+    <div class="main">
+        <!-- Top Bar -->
+        <div class="topbar">
+            <button class="menu-btn" onclick="toggleSidebar()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="topbar-title" id="pageTitle">文件管理</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Files Page -->
+            <div class="page active" id="page-files">
+                <div class="card">
+                    <div class="card-title">上傳文件</div>
+
+                    <div class="file-type-tabs">
+                        <div class="file-type-tab active" onclick="setFileType('epub')">EPUB</div>
+                        <div class="file-type-tab" onclick="setFileType('txt')">TXT</div>
+                    </div>
+
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" accept=".epub,.txt,application/epub+zip,text/plain" multiple style="display:none" onchange="handleFileSelect(event)">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <div class="upload-area-text">點擊選擇文件或拖拽到此處</div>
+                        <div class="upload-area-hint">支持 EPUB 和 TXT 格式</div>
+                    </div>
+                </div>
+
+                <div class="card hidden" id="fileListCard">
+                    <div class="card-title">已上傳文件</div>
+                    <div id="fileList"></div>
+                    <button class="btn btn-secondary btn-block" onclick="clearFiles()">清空列表</button>
+                </div>
+            </div>
+
+            <!-- Glossary Extract Page -->
+            <div class="page" id="page-glossary-extract">
+                <div class="card">
+                    <div class="card-title">術語提取</div>
+                    <div class="card-subtitle">使用 AI 從文件中識別需要翻譯的術語</div>
+
+                    <div class="alert alert-info">
+                        術語提取需要 API Key，請先在設置頁面配置「術語提取 API」
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">自定義提示詞（可選）</label>
+                        <textarea class="form-textarea" id="extractPrompt" placeholder="自定義提取提示詞..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="btnExtract" onclick="extractGlossary()" disabled>
+                        開始提取
+                    </button>
+
+                    <div class="hidden" id="extractProgress">
+                        <div class="progress-percentage" id="extractPercent">0%</div>
+                        <div class="progress">
+                            <div class="progress-bar" id="extractBar"></div>
+                        </div>
+                        <div class="progress-text" id="extractStatus">提取中...</div>
+                        <div class="progress-details" id="extractDetails">
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">已處理</span>
+                                <span class="progress-stat-value" id="extractProcessed">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">總數</span>
+                                <span class="progress-stat-value" id="extractTotal">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">已提取術語</span>
+                                <span class="progress-stat-value" id="extractFound">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">預計剩餘時間</span>
+                                <span class="progress-stat-value" id="extractETA">計算中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card hidden" id="glossaryResult">
+                    <div class="card-title">提取結果</div>
+                    <div id="glossaryList"></div>
+                    <div style="display:flex;gap:12px;margin-top:16px">
+                        <button class="btn btn-secondary" style="flex:1" onclick="exportGlossary()">匯出</button>
+                        <button class="btn btn-primary" style="flex:1" onclick="navigateTo('glossary-review')">繼續校對</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Glossary Review Page -->
+            <div class="page" id="page-glossary-review">
+                <div class="card">
+                    <div class="card-title">術語校對</div>
+                    <div class="card-subtitle">AI 自動校對術語翻譯，批次處理</div>
+
+                    <div class="alert alert-info" id="reviewInfoAlert">
+                        校對功能需要 API Key，請先在設置頁面配置「術語校對 API」
+                    </div>
+
+                    <!-- 术语来源选择 -->
+                    <div class="form-group">
+                        <label class="form-label">術語來源</label>
+                        <div style="display:flex;gap:8px;margin-bottom:12px;">
+                            <button class="btn btn-secondary" style="flex:1" onclick="useExtractedGlossary()">
+                                使用已提取術語 (<span id="extractedCount">0</span>)
+                            </button>
+                            <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('glossaryJsonInput').click()">
+                                上傳 JSON 檔案
+                            </button>
+                        </div>
+                        <input type="file" id="glossaryJsonInput" accept=".json" style="display:none" onchange="handleGlossaryJsonUpload(event)">
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="btnReview" onclick="reviewGlossary()" disabled>
+                        開始校對
+                    </button>
+
+                    <div class="hidden" id="reviewProgress">
+                        <div class="progress-percentage" id="reviewPercent">0%</div>
+                        <div class="progress">
+                            <div class="progress-bar" id="reviewBar"></div>
+                        </div>
+                        <div class="progress-text" id="reviewStatus">校對中...</div>
+                        <div class="progress-details" id="reviewDetails">
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">已校對</span>
+                                <span class="progress-stat-value" id="reviewProcessed">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">總術語數</span>
+                                <span class="progress-stat-value" id="reviewTotal">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">已修正</span>
+                                <span class="progress-stat-value" id="reviewFixed">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">預計剩餘時間</span>
+                                <span class="progress-stat-value" id="reviewETA">計算中...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card hidden" id="reviewResult">
+                    <div class="card-title">校對結果</div>
+                    <div id="reviewList"></div>
+                    <div style="display:flex;gap:12px;margin-top:16px">
+                        <button class="btn btn-secondary" style="flex:1" onclick="exportReviewedGlossary()">下載術語表</button>
+                        <button class="btn btn-primary" style="flex:1" onclick="goToTranslateWithGlossary()">開始翻譯</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Translate Page -->
+            <div class="page" id="page-translate">
+                <div class="card">
+                    <div class="card-title">翻譯設置</div>
+
+                    <!-- 术语表选择 -->
+                    <div class="form-group">
+                        <label class="form-label">術語表來源</label>
+                        <div style="display:flex;gap:8px;margin-bottom:8px;">
+                            <button class="btn btn-secondary" style="flex:1" onclick="useReviewedGlossary()">
+                                使用已校對術語 (<span id="reviewedGlossaryCount">0</span>)
+                            </button>
+                            <button class="btn btn-secondary" style="flex:1" onclick="document.getElementById('translateGlossaryInput').click()">
+                                上傳術語表 JSON
+                            </button>
+                        </div>
+                        <input type="file" id="translateGlossaryInput" accept=".json" style="display:none" onchange="handleTranslateGlossaryUpload(event)">
+                        <div id="translateGlossaryStatus" style="font-size:13px;color:#666;margin-top:4px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="useGlossary" checked> 使用術語表
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">自定義提示詞（可選）</label>
+                        <textarea class="form-textarea" id="translatePrompt" placeholder="例如：請使用古風文言文風格翻譯..."></textarea>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">並發數 <span style="color: var(--text-secondary); font-weight: 400;">(推薦: 5-10)</span></label>
+                            <input type="number" class="form-input" id="maxWorkers" value="10" min="1" max="50">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">批次大小 <span style="color: var(--text-secondary); font-weight: 400;">(推薦: 20-30)</span></label>
+                            <input type="number" class="form-input" id="batchSize" value="20" min="5" max="100">
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" id="btnTranslate" onclick="startTranslation()" disabled>
+                        開始翻譯
+                    </button>
+
+                    <div class="hidden" id="translateProgress">
+                        <div class="progress-percentage" id="translatePercent">0%</div>
+                        <div class="progress">
+                            <div class="progress-bar" id="translateBar"></div>
+                        </div>
+                        <div class="progress-text" id="translateStatus">翻譯中...</div>
+                        <div class="progress-details" id="translateDetails">
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">已翻譯</span>
+                                <span class="progress-stat-value" id="translateProcessed">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">總段落數</span>
+                                <span class="progress-stat-value" id="translateTotal">0</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">速度</span>
+                                <span class="progress-stat-value" id="translateSpeed">0 段/秒</span>
+                            </div>
+                            <div class="progress-stat">
+                                <span class="progress-stat-label">預計剩餘時間</span>
+                                <span class="progress-stat-value" id="translateETA">計算中...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hidden" id="translateResult">
+                        <div class="alert alert-success">翻譯完成！</div>
+                        <button class="btn btn-primary btn-block" onclick="downloadResult()">下載文件</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div class="page" id="page-settings">
+                <div class="card">
+                    <div class="card-title">術語提取 API</div>
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-input" id="extractApiKey">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API 端點</label>
+                        <input type="text" class="form-input" id="extractApiUrl" value="https://api.deepseek.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模型</label>
+                        <input type="text" class="form-input" id="extractApiModel" value="deepseek-chat">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">術語校對 API</div>
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-input" id="reviewApiKey">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API 端點</label>
+                        <input type="text" class="form-input" id="reviewApiUrl" value="https://api.deepseek.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模型</label>
+                        <input type="text" class="form-input" id="reviewApiModel" value="deepseek-chat">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">輸出語言</label>
+                        <select class="form-input" id="outputLanguage">
+                            <option value="traditional">繁體中文</option>
+                            <option value="simplified">简体中文</option>
+                        </select>
+                        <div style="margin-top: 8px; font-size: 13px; color: var(--text-secondary);">
+                            選擇術語校對後的輸出語言格式
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">小說背景設定（可選）</label>
+                        <textarea class="form-textarea" id="novelBackground" placeholder="輸入小說的世界觀、角色設定等..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">自定義提示詞（可選）</label>
+                        <textarea class="form-textarea" id="reviewPrompt" placeholder="自定義校對提示詞..."></textarea>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">翻譯 API</div>
+                    <div class="form-group">
+                        <label class="form-label">API Key</label>
+                        <input type="password" class="form-input" id="translateApiKey">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">API 端點</label>
+                        <input type="text" class="form-input" id="translateApiUrl" value="https://api.deepseek.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">模型</label>
+                        <input type="text" class="form-input" id="translateApiModel" value="deepseek-chat">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-block" onclick="saveSettings()">保存設置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="default_prompts.js"></script>
+    <script src="/default_prompts.local.js"></script>
+    <script src="app_final.js"></script>
+</body>
+</html>

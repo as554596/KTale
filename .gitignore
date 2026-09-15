@@ -1,0 +1,37 @@
+# Environment / secrets
+.env
+.env.local
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Logs and runtime output
+*.log
+backend/backend_run.log
+
+# Uploaded / generated novel files (may contain user content)
+*_translated.epub
+*_translated.txt
+*_translated_smart.txt
+*_quality_report.json
+glossary_full.json
+glossary_reviewed.json
+
+# Local prompt override with original (non-sanitized) prompts (not for GitHub)
+frontend/default_prompts.local.js
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Claude Code local settings
+.claude/settings.local.json
